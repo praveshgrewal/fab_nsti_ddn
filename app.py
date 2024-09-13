@@ -152,7 +152,7 @@ def deletefolder(duser):
 
 
 def process_camera_frame(action):
-    cap = cv2.VideoCapture(1)  # Open the webcam
+    cap = cv2.VideoCapture(-1)  # Open the webcam
     
     if not cap.isOpened():
         st.error("Failed to open the webcam.")
@@ -295,7 +295,7 @@ def admin_app():
             user_db[newusername] = hash_password(newphone)  # Store name as username, phone as password
             save_user_db(user_db)
 
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(-1)
             i = 0
             while True:
                 ret, frame = cap.read()
