@@ -147,14 +147,19 @@ def deletefolder(duser):
         os.remove(duser+'/'+i)
     os.rmdir(duser)
 
+
+
 def process_camera_frame(action):
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0)  # Open the webcam
+    
+    if not cap.isOpened():
+        st.error("Failed to open the webcam.")
+        return
     
     st.write("Camera is open. Press 'Stop' to stop.")
     
-    # Create a placeholder to update the image
+    # Create a placeholder for displaying the image and a stop button
     frame_placeholder = st.empty()
-    
     stop_button = st.button("Stop")
     
     while True:
@@ -163,7 +168,9 @@ def process_camera_frame(action):
             st.error("Failed to capture image from camera.")
             break
 
+        # Extract faces (using dummy face extraction here)
         faces = extract_faces(frame)
+        
         if len(faces) > 0:
             (x, y, w, h) = faces[0]  # Get the first detected face
             face = frame[y:y+h, x:x+w]
@@ -174,27 +181,28 @@ def process_camera_frame(action):
                 name = identified_user[0]
                 add_attendance(name, action)
                 st.success(f"Marked {name} as {action}")
-                
+
                 # Display attendance of the identified user
-                datetoday = pd.Timestamp.now().strftime('%Y-%m-%d')
-                user_attendance_df, _ = extract_attendance(datetoday)
+                user_attendance_df, _ = extract_attendance(datetime.today().strftime('%Y-%m-%d'))
                 user_attendance = user_attendance_df[user_attendance_df['Name'] == name] if user_attendance_df is not None else pd.DataFrame()
                 if not user_attendance.empty:
                     st.write(f"Attendance for {name}:")
                     st.write(user_attendance[['Name', 'Roll', 'Department', 'Phone Number', 'Incoming Time', 'Outgoing Time']])
 
+            # Draw rectangle around the detected face
             cv2.rectangle(frame, (x, y), (x+w, y+h), (86, 32, 251), 1)
         
-        # Convert frame to RGB and display with Streamlit
+        # Convert frame to RGB and display it in Streamlit
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_placeholder.image(frame_rgb, channels="RGB", use_column_width=True)
 
-        # Check if stop button is pressed
+        # Stop if the stop button is pressed
         if stop_button:
-            st.write("Camera stopped.")
             break
 
     cap.release()
+    st.write("Camera stopped.")
+
 
 # Admin application with sidebar navigation
 def admin_app():
