@@ -148,7 +148,7 @@ def deletefolder(duser):
     os.rmdir(duser)
 
 def process_camera_frame(action):
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     
     st.write("Camera is open. Press 'Stop' to stop.")
     
