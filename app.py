@@ -7,6 +7,9 @@ import pandas as pd
 import joblib
 from datetime import date, datetime
 from sklearn.neighbors import KNeighborsClassifier
+import plotly.express as px
+import streamlit.components.v1 as components
+from streamlit_option_menu import option_menu
 
 # Admin credentials
 nimgs = 10
@@ -193,20 +196,25 @@ def process_camera_frame(action):
 def admin_app():
     st.title("Admin Dashboard")
 
-    # Sidebar for navigation
-    option = st.sidebar.radio("Navigation", [
-        'Home', 'Attendance', 'Add New Student', 'Delete Student', 'Mark Attendance', 'Developer', 'Back to Main Page'
-    ])
+    # Sidebar for navigation using streamlit-option-menu
+    with st.sidebar:
+        selected_option = option_menu(
+            menu_title=None,
+            options=['Home', 'Attendance', 'Add New Student', 'Delete Student', 'Mark Attendance', 'Developer', 'Back to Main Page'],
+            icons=['house', 'list-check', 'person-plus', 'person-x', 'camera', 'code', 'house-door'],
+            menu_icon="cast",
+            default_index=0
+        )
 
-    if option == 'Back to Main Page':
+    if selected_option == 'Back to Main Page':
         st.session_state['admin_authenticated'] = False
         st.session_state['student_authenticated'] = False
         st.experimental_rerun()
 
-    elif option == 'Home':
+    elif selected_option == 'Home':
         st.write("Welcome to the Admin Dashboard")
 
-    elif option == 'Attendance':
+    elif selected_option == 'Attendance':
         st.header("View Attendance")
         selected_date = st.date_input("Select a date", value=date.today())
         selected_date_str = selected_date.strftime("%m_%d_%y")
@@ -225,14 +233,14 @@ def admin_app():
         else:
             st.warning("No attendance found for the selected date.")
 
-    elif option == 'Add New Student':
+    elif selected_option == 'Add New Student':
         st.header("Add New Student")
         newusername = st.text_input("Enter New Student Name")
         newuserid = st.number_input("Enter New Student Id", min_value=1)
         newdepartment = st.text_input("Enter Department")
         newphone = st.text_input("Enter Phone Number")
 
-        if st.button("Add New Student"):
+        if st.button("Add New Student", key='add_new_student'):
             userimagefolder = f'static/faces/{newusername}_{newuserid}_{newdepartment}_{newphone}'
             if not os.path.isdir(userimagefolder):
                 os.makedirs(userimagefolder)
@@ -264,25 +272,25 @@ def admin_app():
             st.success(f"{newusername} with ID {newuserid} Added Successfully")
             train_model()
 
-    elif option == 'Delete Student':
+    elif selected_option == 'Delete Student':
         st.header("Delete Existing Student")
         usernames, names, rolls, departments, phones, l = getallusers()
 
         deleteusername = st.selectbox("Select Student to Delete", usernames)
-        if st.button("Delete Student"):
+        if st.button("Delete Student", key='delete_student'):
             deletefolder(f'static/faces/{deleteusername}')
             train_model()
             st.success(f"{deleteusername} Deleted Successfully")
 
-    elif option == 'Mark Attendance':
+    elif selected_option == 'Mark Attendance':
         st.header("Mark Attendance")
         action = st.selectbox("Select Action", ["Incoming", "Outgoing"])
 
-        if st.button("Start Camera"):
+        if st.button("Start Camera", key='start_camera'):
             process_camera_frame(action)
 
-    elif option == 'Developer':
-        st.markdown("""
+    elif selected_option == 'Developer':
+        st.markdown(""" 
         - **Team:** Debugging Crew
         - **Team Leader:** Bhagwan Singh
         - **UI/UX:** Raja 
@@ -295,21 +303,26 @@ def student_app():
     st.title("Student Dashboard")
 
     # Sidebar for navigation
-    option = st.sidebar.radio("Navigation", ['Home', 'View Attendance', 'Back to Main Page'])
+    with st.sidebar:
+        selected_option = option_menu(
+            menu_title=None,
+            options=['Home', 'Back to Main Page'],
+            icons=['house', 'house-door'],
+            menu_icon="cast",
+            default_index=0
+        )
 
-    if option == 'Back to Main Page':
+    if selected_option == 'Back to Main Page':
         st.session_state['admin_authenticated'] = False
         st.session_state['student_authenticated'] = False
         st.experimental_rerun()
 
-    elif option == 'Home':
+    elif selected_option == 'Home':
         st.write("Welcome to the Student Dashboard")
-
-    elif option == 'View Attendance':
-        st.header("View Your Attendance")
+        
         selected_date = st.date_input("Select a date", value=date.today())
         selected_date_str = selected_date.strftime("%m_%d_%y")
-        df, l = extract_attendance(selected_date_str)
+        df, _ = extract_attendance(selected_date_str)
 
         current_username = st.session_state['username']
 
@@ -318,11 +331,9 @@ def student_app():
             student_attendance = df[df['Name'] == current_username]
 
             if not student_attendance.empty:
-                st.write(f"Total Users in Database: {totalreg()}")
                 st.write(f"Date: {selected_date.strftime('%d-%B-%Y')}")
                 st.write(student_attendance[['Name', 'Roll', 'Department', 'Phone Number', 'Incoming Time', 'Outgoing Time']])
-            else:
-                st.warning("No attendance found for you on the selected date.")
+
         else:
             st.warning("No attendance found for the selected date.")
 
@@ -337,6 +348,7 @@ def main():
 
     # Role selection moved to sidebar
     role = st.sidebar.selectbox("Select Role", ['Admin', 'Student'])
+    
 
     if st.session_state['admin_authenticated'] and role == 'Admin':
         admin_app()
@@ -366,6 +378,7 @@ def main():
                     st.experimental_rerun()
                 else:
                     st.error("Invalid Student credentials")
+    st.sidebar.info("Made with Debugging Crew")
 
 if __name__ == "__main__":
     main()
