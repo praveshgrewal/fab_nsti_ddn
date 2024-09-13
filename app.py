@@ -150,10 +150,12 @@ def deletefolder(duser):
 def process_camera_frame(action):
     cap = cv2.VideoCapture(0)
     
-    st.write("Camera is open. Press 'Esc' to stop.")
+    st.write("Camera is open. Press 'Stop' to stop.")
     
     # Create a placeholder to update the image
     frame_placeholder = st.empty()
+    
+    stop_button = st.button("Stop")
     
     while True:
         ret, frame = cap.read()
@@ -174,6 +176,7 @@ def process_camera_frame(action):
                 st.success(f"Marked {name} as {action}")
                 
                 # Display attendance of the identified user
+                datetoday = pd.Timestamp.now().strftime('%Y-%m-%d')
                 user_attendance_df, _ = extract_attendance(datetoday)
                 user_attendance = user_attendance_df[user_attendance_df['Name'] == name] if user_attendance_df is not None else pd.DataFrame()
                 if not user_attendance.empty:
@@ -186,11 +189,12 @@ def process_camera_frame(action):
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_placeholder.image(frame_rgb, channels="RGB", use_column_width=True)
 
-        if cv2.waitKey(1) == 27:  # Escape key to exit
+        # Check if stop button is pressed
+        if stop_button:
+            st.write("Camera stopped.")
             break
 
     cap.release()
-    cv2.destroyAllWindows()
 
 # Admin application with sidebar navigation
 def admin_app():
