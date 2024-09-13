@@ -148,7 +148,7 @@ def deletefolder(duser):
     os.rmdir(duser)
 
 def process_camera_frame(action):
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     
     st.write("Camera is open. Press 'Stop' to stop.")
     
@@ -256,7 +256,7 @@ def admin_app():
             user_db[newusername] = hash_password(newphone)  # Store name as username, phone as password
             save_user_db(user_db)
 
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(0)
             i = 0
             while True:
                 ret, frame = cap.read()
