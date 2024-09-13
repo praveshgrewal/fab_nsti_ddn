@@ -360,7 +360,6 @@ def main():
 
     # Role selection moved to sidebar
     role = st.sidebar.selectbox("Select Role", ['Admin', 'Student'])
-    
 
     if st.session_state['admin_authenticated'] and role == 'Admin':
         admin_app()
@@ -377,7 +376,8 @@ def main():
                     st.success("Logged in as Admin")
                     st.session_state['admin_authenticated'] = True
                     st.session_state['student_authenticated'] = False
-                    st.experimental_rerun()
+                    # Use set_query_params to force a refresh
+                    st.experimental_set_query_params(reload="true")
                 else:
                     st.error("Invalid Admin credentials")
 
@@ -387,9 +387,11 @@ def main():
                     st.session_state['student_authenticated'] = True
                     st.session_state['admin_authenticated'] = False
                     st.session_state['username'] = username  # Save the username for later reference
-                    st.experimental_rerun()
+                    # Use set_query_params to force a refresh
+                    st.experimental_set_query_params(reload="true")
                 else:
                     st.error("Invalid Student credentials")
+
     st.sidebar.info("Made with Debugging Crew")
 
 if __name__ == "__main__":
