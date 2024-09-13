@@ -1,0 +1,13 @@
+streamlit
+
+opencv-python
+numpy
+pandas
+scikit-learn
+joblib
+altair
+
+opencv-python-headlessnumpy==1.24.3
+pandas
+scikit-learn
+joblib
