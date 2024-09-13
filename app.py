@@ -221,7 +221,8 @@ def admin_app():
     if selected_option == 'Back to Main Page':
         st.session_state['admin_authenticated'] = False
         st.session_state['student_authenticated'] = False
-        st.experimental_rerun()
+        st.session_state['login_role'] = None  # Clear login role
+        st.experimental_rerun()  # Check if your version supports this or handle navigation differently
 
     elif selected_option == 'Home':
         st.write("Welcome to the Admin Dashboard")
