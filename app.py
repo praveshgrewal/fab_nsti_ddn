@@ -355,16 +355,22 @@ def main():
         st.session_state['admin_authenticated'] = False
     if 'student_authenticated' not in st.session_state:
         st.session_state['student_authenticated'] = False
+    if 'login_role' not in st.session_state:
+        st.session_state['login_role'] = None
 
     st.title("FACE AUTHENTICATION BIOMETRIC ATTENDANCE SYSTEM")
 
     # Role selection moved to sidebar
     role = st.sidebar.selectbox("Select Role", ['Admin', 'Student'])
-
-    if st.session_state['admin_authenticated'] and role == 'Admin':
-        admin_app()
-    elif st.session_state['student_authenticated'] and role == 'Student':
-        student_app()
+    
+    if st.session_state['login_role'] and st.session_state['login_role'] == role:
+        if role == 'Admin' and st.session_state['admin_authenticated']:
+            admin_app()
+        elif role == 'Student' and st.session_state['student_authenticated']:
+            student_app()
+        else:
+            st.subheader("Access Denied")
+            st.write("Please log in.")
     else:
         st.subheader("Login Page")
         username = st.text_input("Username")
@@ -376,8 +382,7 @@ def main():
                     st.success("Logged in as Admin")
                     st.session_state['admin_authenticated'] = True
                     st.session_state['student_authenticated'] = False
-                    # Use set_query_params to force a refresh
-                    st.experimental_set_query_params(reload="true")
+                    st.session_state['login_role'] = 'Admin'
                 else:
                     st.error("Invalid Admin credentials")
 
@@ -387,8 +392,7 @@ def main():
                     st.session_state['student_authenticated'] = True
                     st.session_state['admin_authenticated'] = False
                     st.session_state['username'] = username  # Save the username for later reference
-                    # Use set_query_params to force a refresh
-                    st.experimental_set_query_params(reload="true")
+                    st.session_state['login_role'] = 'Student'
                 else:
                     st.error("Invalid Student credentials")
 
