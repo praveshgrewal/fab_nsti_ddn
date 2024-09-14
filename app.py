@@ -10,6 +10,8 @@ from sklearn.neighbors import KNeighborsClassifier
 import plotly.express as px
 import streamlit.components.v1 as components
 from streamlit_option_menu import option_menu
+from datetime import date
+
 
 # Admin credentials
 nimgs = 10
@@ -150,7 +152,7 @@ def deletefolder(duser):
 
 
 def process_camera_frame(action):
-    cap = cv2.VideoCapture(0)  # Open the webcam
+    cap = cv2.VideoCapture(-1)  # Open the webcam
     
     if not cap.isOpened():
         st.error("Failed to open the webcam.")
@@ -218,15 +220,44 @@ def admin_app():
             default_index=0
         )
 
+    # Handle navigation based on session state
+    if 'page' not in st.session_state:
+        st.session_state.page = 'Home'
+
     if selected_option == 'Back to Main Page':
-        st.session_state['admin_authenticated'] = False
-        st.session_state['student_authenticated'] = False
-        st.experimental_rerun()
-
+        st.session_state.admin_authenticated = False
+        st.session_state.student_authenticated = False
+        st.session_state.login_role = None  # Clear login role
+        st.session_state.page = 'Main'  # Set page to Main
+    
     elif selected_option == 'Home':
-        st.write("Welcome to the Admin Dashboard")
-
+        st.session_state.page = 'Home'
+    
     elif selected_option == 'Attendance':
+        st.session_state.page = 'Attendance'
+    
+    elif selected_option == 'Add New Student':
+        st.session_state.page = 'Add New Student'
+    
+    elif selected_option == 'Delete Student':
+        st.session_state.page = 'Delete Student'
+    
+    elif selected_option == 'Mark Attendance':
+        st.session_state.page = 'Mark Attendance'
+    
+    elif selected_option == 'Developer':
+        st.session_state.page = 'Developer'
+    
+    # Render the selected page
+    if st.session_state.page == 'Main':
+        # Implement the main page content here
+        st.write("Redirecting to the main page...")
+        # Use Streamlit to redirect or show main page content if needed
+    
+    elif st.session_state.page == 'Home':
+        st.write("Welcome to the Admin Dashboard")
+    
+    elif st.session_state.page == 'Attendance':
         st.header("View Attendance")
         selected_date = st.date_input("Select a date", value=date.today())
         selected_date_str = selected_date.strftime("%m_%d_%y")
@@ -244,8 +275,8 @@ def admin_app():
             }))
         else:
             st.warning("No attendance found for the selected date.")
-
-    elif selected_option == 'Add New Student':
+    
+    elif st.session_state.page == 'Add New Student':
         st.header("Add New Student")
         newusername = st.text_input("Enter New Student Name")
         newuserid = st.number_input("Enter New Student Id", min_value=1)
@@ -264,7 +295,7 @@ def admin_app():
             user_db[newusername] = hash_password(newphone)  # Store name as username, phone as password
             save_user_db(user_db)
 
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(-1)
             i = 0
             while True:
                 ret, frame = cap.read()
@@ -283,8 +314,8 @@ def admin_app():
             cv2.destroyAllWindows()
             st.success(f"{newusername} with ID {newuserid} Added Successfully")
             train_model()
-
-    elif selected_option == 'Delete Student':
+    
+    elif st.session_state.page == 'Delete Student':
         st.header("Delete Existing Student")
         usernames, names, rolls, departments, phones, l = getallusers()
 
@@ -293,15 +324,15 @@ def admin_app():
             deletefolder(f'static/faces/{deleteusername}')
             train_model()
             st.success(f"{deleteusername} Deleted Successfully")
-
-    elif selected_option == 'Mark Attendance':
+    
+    elif st.session_state.page == 'Mark Attendance':
         st.header("Mark Attendance")
         action = st.selectbox("Select Action", ["Incoming", "Outgoing"])
 
         if st.button("Start Camera", key='start_camera'):
             process_camera_frame(action)
-
-    elif selected_option == 'Developer':
+    
+    elif st.session_state.page == 'Developer':
         st.markdown(""" 
         - **Team:** Debugging Crew
         - **Team Leader:** Bhagwan Singh
@@ -310,9 +341,14 @@ def admin_app():
         - **Modules/Algorithm:** Pravesh 
         """)
 
+
 # Student application with restricted access
 def student_app():
     st.title("Student Dashboard")
+
+    # Initialize session state if not already done
+    if 'page' not in st.session_state:
+        st.session_state.page = 'Home'
 
     # Sidebar for navigation
     with st.sidebar:
@@ -324,19 +360,29 @@ def student_app():
             default_index=0
         )
 
+    # Handle navigation based on selected option
     if selected_option == 'Back to Main Page':
         st.session_state['admin_authenticated'] = False
         st.session_state['student_authenticated'] = False
-        st.experimental_rerun()
+        st.session_state.page = 'Main'  # Set page to Main
 
     elif selected_option == 'Home':
+        st.session_state.page = 'Home'
+    
+    # Render content based on current page state
+    if st.session_state.page == 'Main':
+        # Redirect or render main page content if needed
+        st.write("Redirecting to the main page...")
+        # You might use Streamlit's session state to redirect or show main page content
+
+    elif st.session_state.page == 'Home':
         st.write("Welcome to the Student Dashboard")
-        
+
         selected_date = st.date_input("Select a date", value=date.today())
         selected_date_str = selected_date.strftime("%m_%d_%y")
         df, _ = extract_attendance(selected_date_str)
 
-        current_username = st.session_state['username']
+        current_username = st.session_state.get('username', 'Unknown')
 
         if df is not None:
             # Filter only the current user's attendance
@@ -345,27 +391,32 @@ def student_app():
             if not student_attendance.empty:
                 st.write(f"Date: {selected_date.strftime('%d-%B-%Y')}")
                 st.write(student_attendance[['Name', 'Roll', 'Department', 'Phone Number', 'Incoming Time', 'Outgoing Time']])
-
+            else:
+                st.warning("No attendance found for the selected date.")
         else:
-            st.warning("No attendance found for the selected date.")
-
+            st.warning("No attendance data available.")
 # Main application logic
 def main():
     if 'admin_authenticated' not in st.session_state:
         st.session_state['admin_authenticated'] = False
     if 'student_authenticated' not in st.session_state:
         st.session_state['student_authenticated'] = False
+    if 'login_role' not in st.session_state:
+        st.session_state['login_role'] = None
 
     st.title("FACE AUTHENTICATION BIOMETRIC ATTENDANCE SYSTEM")
 
     # Role selection moved to sidebar
     role = st.sidebar.selectbox("Select Role", ['Admin', 'Student'])
     
-
-    if st.session_state['admin_authenticated'] and role == 'Admin':
-        admin_app()
-    elif st.session_state['student_authenticated'] and role == 'Student':
-        student_app()
+    if st.session_state['login_role'] and st.session_state['login_role'] == role:
+        if role == 'Admin' and st.session_state['admin_authenticated']:
+            admin_app()
+        elif role == 'Student' and st.session_state['student_authenticated']:
+            student_app()
+        else:
+            st.subheader("Access Denied")
+            st.write("Please log in.")
     else:
         st.subheader("Login Page")
         username = st.text_input("Username")
@@ -377,7 +428,7 @@ def main():
                     st.success("Logged in as Admin")
                     st.session_state['admin_authenticated'] = True
                     st.session_state['student_authenticated'] = False
-                    st.experimental_rerun()
+                    st.session_state['login_role'] = 'Admin'
                 else:
                     st.error("Invalid Admin credentials")
 
@@ -387,9 +438,10 @@ def main():
                     st.session_state['student_authenticated'] = True
                     st.session_state['admin_authenticated'] = False
                     st.session_state['username'] = username  # Save the username for later reference
-                    st.experimental_rerun()
+                    st.session_state['login_role'] = 'Student'
                 else:
                     st.error("Invalid Student credentials")
+
     st.sidebar.info("Made with Debugging Crew")
 
 if __name__ == "__main__":
